@@ -13,6 +13,7 @@
 
 ;; woo->run
 ;;
+;;
 ;; Description:
 ;;   procedure for run Woo server
 ;; Params:
@@ -23,6 +24,7 @@
   (woo:run
    (lambda (env) (declare (ignore env))
      '(200 (:content-type "text/plain") ("Hello, world")))))
+
 
 ;; application->start
 ;;
@@ -37,6 +39,7 @@
   (cond ((string-equal name "http")
          (bt:make-thread #'woo->run :name name))
         (t (format t "Not correct name.~%"))))
+
 
 ;; kill-thread->iteration
 ;;
@@ -95,6 +98,7 @@
       (format t "All thread: ~% ~{~a~%~}~%" all-threads)
       all-threads)))
 
+
 ;; application->get/threads
 ;;
 ;;
@@ -106,6 +110,7 @@
 ;;   list of threads
 (defun application->get/threads ()
   (bt:all-threads))
+
 
 ;; thread-by-name->iteration
 ;;
@@ -128,6 +133,7 @@
               (format "Error: can not find thread by name~%")
               nil)
             (thread-by-name->iteration name rest-threads)))))
+
 
 ;; application->get/thread-by-name
 ;;

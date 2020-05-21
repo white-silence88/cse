@@ -109,8 +109,11 @@
     (tname tbody cur-req-mid cur-res-mid result group-prefix)
   (let*
       ((new-group-prefix (parser/update-path-or-prefix group-prefix tname))
-       (internal-route (config-property->get tbody "routes")))
-    ()))
+       (internal-wood (config-property->get tbody "routes"))
+       (first-tree (first internal-wood))
+       (rest-wood (rest internal-wood)))
+    ;; TODO: add recurrsive iteration (or loop)
+    ( )))
 
 ;; config/parser
 ;;

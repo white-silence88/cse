@@ -51,7 +51,7 @@
 ;;   parser for routes tree config
 (defun config/parser (tree req-middlewares res-middlewares)
   (let*
-      ((config-name (car tree))
+      ((tree-name (car tree))
        (tree-body (cdr tree))
        (is-group (group? tree-body))
        (current-req-middlewares (middlewares/add tree-body "on-request" req-middlewares))
@@ -64,4 +64,4 @@
 ;; Description:
 ;;   public procedure convert routes tree config to routes map
 (defun routes-config->>routes-map (routes-wood)
-  (map 'list (lambda (routes-tree) (tree/parser routes-tree nil nil)) routes-wood))
+  (map 'list (lambda (routes-tree) (config/parser routes-tree nil nil)) routes-wood))

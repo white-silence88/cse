@@ -4,10 +4,13 @@
 ;;
 ;;
 ;; Description:
-;;   test on name has pair config property
+;;   procedure for check on name pair config
 ;; Params:
+;;   value   [String]   name of property
+;;   item    [Pair]     config property pair
 ;; Returns:
-;;   return t as string equal, or nil as not equal
+;;   As values equal return t.
+;;   As values not equal return nil
 (defun pair/test-on-name (value item)
   (string= value (car item)))
 
@@ -16,10 +19,14 @@
 ;;
 ;;
 ;; Description:
-;;   procedure for check on group config tree
+;;   procedure for check on group config tree. In procedure try find
+;;   routes property.
+;;   As property with name "routes" find - return t, else return nil
 ;; Params:
 ;;   data   [List|Pair]   pair of data
 ;; Returns:
+;;   t as compare result is True.
+;;   nil as compare result is False.
 (defun group? (data)
   (let
       ((result (find "routes" data :test #'pair/test-on-name)))
@@ -34,7 +41,10 @@
 ;; Description:
 ;;   prcedure for get property value from config pair
 ;; Params:
+;;   tree-body [List] list of properties
+;;   property-name [String] name of finded property
 ;; Returns:
+;;   value of property or nil
 (defun config-property->get (tree-body property-name)
   (cdr (find property-name tree-body :test #'pair/test-on-name)))
 
@@ -44,6 +54,12 @@
 ;;
 ;; Description:
 ;;   procedure for add middlewares for list
+;; Params:
+;;   tree-body      [List]   list with config pairs
+;;   property-name  [String] name of property with middlewares
+;;   middlewares    [List]   list of middlewares functions
+;; Returns:
+;;   new list of middlewares functions
 (defun middlewares/add (tree-body property-name middlewares)
   (let
       ((property (config-property->get tree-body property-name)))
@@ -62,7 +78,10 @@
 ;; Description:
 ;;   reccursive procedure for add fields for HashTable by list of pairs
 ;; Params:
+;;   config      [HashTable]   route config HashTable
+;;   config-list [List]        list of config pairs
 ;; Returns:
+;;   updated config HashTable
 (defun route-config/make->update-fields (config config-list)
   (let*
       ((field (first config-list))
@@ -110,29 +129,42 @@
 ;;
 ;;
 ;; Description:
+;;   procedure for update path or path prefix
 ;; Params:
+;;   prefix   [String]   prefix for update path
+;;   tname    [String]   path for update by prefix
 ;; Returns:
-(defun parser/update-path-or-prefix (group-prefix tname)
+;;   new updated prefix
+(defun parser/update-path-or-prefix (prefix tname)
   (cond
-   ((not group-prefix) tname)
-   (t (concatenate 'string tname group-prefix))))
+   ((not prefix) tname)
+   (t (concatenate 'string tname prefix))))
 
 
 ;; parser/add-route-pair
 ;;
 ;;
 ;; Description:
+;;   procedure for add pair to route map
 ;; Params:
+;;   tname       [String]   current route path
+;;   tbody       [List]     list of route config pairs
+;;   desc        [String]   route description
+;;   req-mid     [List]     list of requst middlewares
+;;   res-mid     [List]     list of response middlewares
+;;   result      [List]     list of pair (URL route & config for it)
+;;   prefix      [String]   prefix for URL
 ;; Returns:
+;;   list of pair (URL route & config for it)
 (defun parser/add-pair
-    (tname tbody desc cur-req-mid cur-res-mid result group-prefix)
+    (tname tbody desc req-mid res-mid result prefix)
   (let*
-      ((path (parser/update-path-or-prefix tname group-prefix))
+      ((path (parser/update-path-or-prefix tname prefix))
        (handler (config-property->get tbody "handler"))
        (methods (config-property->get tbody "methods"))
        (fields
         (route-config/make-config-list
-         (list desc methods cur-req-mid cur-res-mid handler)
+         (list desc methods req-mid res-mid handler)
          (list 'description 'method 'on-request 'on-response 'hander)))
        (config (route-config/make fields))
        (pair-list (list (cons path config))))
@@ -145,12 +177,20 @@
 ;;
 ;;
 ;; Description:
+;;   recurrsive procedure for execute data list with pairs routes config &
+;;   rebuild result array
 ;; Params:
+;;   data      [List]    data of route tree config
+;;   req-mid   [List]    list of request middlewares
+;;   res-mid   [List]    list of response middlewares
+;;   result    [List]    result list
+;;   prefix    [String]  URL path prefix
 ;; Returns:
-(defun group-iteration/map (tree req-mid res-mid result prefix)
+;;   list of pairs with route URL and route config HashTable
+(defun group-iteration/map (data req-mid res-mid result prefix)
   (let*
-      ((first-item (first tree))
-       (rest-items (rest tree))
+      ((first-item (first data))
+       (rest-items (rest data))
        (current (config/parser first-item req-mid res-mid result prefix)))
     (cond
      ((not rest-items) current)
@@ -161,13 +201,14 @@
 ;;
 ;;
 ;; Description:
+;;   rescurrsive procedure for execute route list of config pairs
 ;; Params:
-;;   tname    [String]
-;;   tbody    [List]
-;;   req-mid  [List]
-;;   res-mid  [List]
-;;   result   [List]
-;;   prefix   [Str]
+;;   tname    [String]  URL path
+;;   tbody    [List]    list of config pairs
+;;   req-mid  [List]    list of request middlewares
+;;   res-mid  [List]    list of response middlewares
+;;   result   [List]    result list
+;;   prefix   [String]  URL path prefix
 ;; Returns:
 ;;   list pair (url and config HashTable)
 (defun parser/group-iteration (tname tbody req-mid res-mid result prefix)
@@ -186,7 +227,7 @@
 ;;  req-middlewares [List] list of functions for hook before require
 ;;  res-middlewares [List] list of function for hook before response
 ;;  result          [List] list of pair (url and config HashTables)
-prefix
+;;  prefix
 ;; Returns:
 ;;   list of pair (url and config HashTable)
 (defun config/parser (tree req-middlewares res-middlewares result prefix)

@@ -4,6 +4,7 @@
   (:export
    #:json-file->>tree
    #:json-file->>routes-tree
+   #:routes-config->>routes-map
    #:application->get/thread-by-name
    #:application->get/threads
    #:application->info/threads

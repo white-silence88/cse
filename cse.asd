@@ -9,4 +9,5 @@
   :depends-on (#:woo #:cl-async #:alexandria #:bt-semaphore #:jonathan)
   :components ((:file "package")
                (:file "cse")
-               (:file "./src/json")))
+               (:file "./src/json")
+               (:file "./src/routes")))

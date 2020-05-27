@@ -41,7 +41,7 @@
 ;; Description:
 ;;   prcedure for get property value from config pair
 ;; Params:
-;;   tree-body [List] list of properties
+;;   tree-body     [List] list of properties
 ;;   property-name [String] name of finded property
 ;; Returns:
 ;;   value of property or nil
@@ -101,7 +101,9 @@
 ;; Description:
 ;;   procedure for make HashTable for routes config
 ;; Params:
+;;   config-list [List] list of config pairs
 ;; Returns:
+;;   HashTable with route config
 (defun route-config/make (config-list)
   (let
       ((config (make-hash-table)))
@@ -114,7 +116,10 @@
 ;; Description:
 ;;   procedure for make config as pair list from two arays
 ;; Params:
+;;   values-list  [List]  list of config values
+;;   fields-list  [List]  list of config fields
 ;; Returns:
+;;   list of route pairs (field and value)
 (defun route-config/make-config-list (values-list fields-list)
   (let
       ((index -1))
@@ -223,11 +228,11 @@
 ;; Description:
 ;;   parser for routes tree config
 ;; Params:
-;;  tree            [List] list of config pairs
-;;  req-middlewares [List] list of functions for hook before require
-;;  res-middlewares [List] list of function for hook before response
-;;  result          [List] list of pair (url and config HashTables)
-;;  prefix
+;;  tree               [List]    list of config pairs
+;;  req-middlewares    [List]    list of functions for hook before require
+;;  res-middlewares    [List]    list of function for hook before response
+;;  result             [List]    list of pair (url and config HashTables)
+;;  prefix             [String]  prefix part for current URL
 ;; Returns:
 ;;   list of pair (url and config HashTable)
 (defun config/parser (tree req-middlewares res-middlewares result prefix)

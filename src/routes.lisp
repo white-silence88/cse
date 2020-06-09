@@ -282,3 +282,113 @@
 ;;   list of pair (url and config HashTable)
 (defun routes-config->>routes-map (data)
   (routes-map/iteration data nil))
+
+;; url-param?
+;;
+;; Description:
+;;   procedure for check route url token on param
+;; Params:
+;;   route-token   [String]   url token
+;; Returns:
+;;   result check on url param token (True - t, False - nil)
+(defun url-param? (route-token)
+  (if (string= ":" (subseq route-token 0 1)) t nil))
+
+;; check-tokens/update-params
+;;
+;;
+;; Description:
+;;   procedure for update url params alist
+;; Params:
+;;   is-param   [Boolean|nil]  property is equal t when token is param
+;;   params     [List]         url params list
+;;   name       [String]       name of url param
+;;   value      [Value]        value of url param
+;; Returns:
+;;   list of url params
+(defun check/update-params (is-param params name value)
+  (if (eq is-param t)
+      (let
+          ((palist (list (cons (subseq name 1) value))))
+        (cond
+         ((not params) palist)
+         (t (append params palist))))
+    params))
+
+;; route-test/check-tokens
+;;
+;;
+;; Description:
+;;   procedure for compare url list and route list
+;; Params:
+;;   utokens   [List]        list with string request url tokens
+;;   rtokens   [List]        list with string route url tokens
+;;   rconfig   [HashTable]   HashTable with routw config
+;;   params    [List|nil]    alist with route url params
+;; Returns:
+;;   return result check True (t) or False (nil)
+(defun route-test/check (utokens rtokens rconfig params)
+  (let*
+      ((futoken (first utokens))
+       (rutokens (rest utokens))
+       (frtoken (first rtokens))
+       (rrtokens (rest rtokens))
+       (is-param (url-param? frtoken))
+       (check-tokens (if (not is-param) (string= futoken frtoken) t)))
+    (cond
+     ((not check-tokens) nil)
+     (t (let
+            ((nparams (check/update-params is-param params frtoken futoken)))
+          (if (not rutokens)
+              (progn
+                (setf (gethash 'url-params rconfig) nparams)
+                t)
+            (route-test/check-tokens rutokens rrtokens rconfig nparams)))))))
+
+;; url->list
+;;
+;;
+;; Description:
+;;   procedure for convert url string to url list
+;; Params:
+;;   url   [String]   request URL
+;; Returns:
+;;   list with url string tokens
+(defun url->list (url)
+  (cl-ppcre:split "/" url))
+
+;; find/route-test
+;;
+;;
+;; Description:
+;;   procedure for check route and url equals
+;; Params:
+;;   url   [String]  request URL
+;;   route [Pair]    pair with url-pattern (string) and config (HashTable)
+;; Returns:
+;;   test result as True (t) or nil
+(defun find/route-test (url route)
+  (let
+      ((rurl (car route))
+       (rconfig (cdr route)))
+    (if (string= url rurl)
+        t
+      (let
+          ((utokens (url->list url))
+           (rtokens (url->list rurl)))
+        (if (= (list-length utokens) (list-length rtokens))
+            (route-test/check utokens rtokens rconfig nil)
+          nil)))))
+
+;; routes-map/find
+;;
+;;
+;; Description:
+;;   procedure for find route config in route map
+;; Params:
+;;   routes-map  [List]    alist with routes
+;;   url         [String]  request url
+;; Returns:
+;;   pair of route pattern and route config
+(defun routes-map/find (routes-map url)
+  (find url routes-map :test #'find/route-test))

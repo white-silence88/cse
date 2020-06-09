@@ -6,7 +6,12 @@
   :license  "GNUv3"
   :version "0.0.1"
   :serial t
-  :depends-on (#:woo #:cl-async #:alexandria #:bt-semaphore #:jonathan)
+  :depends-on (#:woo
+               #:cl-async
+               #:alexandria
+               #:bt-semaphore
+               #:jonathan
+               #:cl-ppcre)
   :components ((:file "package")
                (:file "cse")
                (:file "./src/json")

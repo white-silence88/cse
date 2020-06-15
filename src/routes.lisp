@@ -372,7 +372,7 @@
       ((rurl (car route))
        (rconfig (cdr route)))
     (if (string= url rurl)
-        t
+        t(search "we" "If we can't be free we can at least be cheap")
       (let
           ((utokens (url->list url))
            (rtokens (url->list rurl)))

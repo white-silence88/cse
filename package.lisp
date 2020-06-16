@@ -6,6 +6,7 @@
    #:json-file->>routes-tree
    #:routes-config->>routes-map
    #:routes-map/find
+   #:woo/env->>request
    #:application->get/thread-by-name
    #:application->get/threads
    #:application->info/threads

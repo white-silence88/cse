@@ -8,10 +8,25 @@
 (defun request/path-info (value)
   (cons "base-url" value))
 
+;; get-method-pair
+;;
+;; Description:
+;;   method for get pair with method name
+;; Params:
+;;   method-name  [String]  name of request method
+;; Returns:
+;;   pair with name property (method) and name
 (defun get-method-pair (method-name)
   (cons "method" method-name))
 
 ;; request/method
+;;
+;; Description:
+;;   procedure for get method proprty pair from env value
+;; Params:
+;;   value  [Symbol]  symbol of reqeust method
+;; Returns
+;;   pair with name property (method) and name
 (defun request/method (value)
   (cond
    ((eq value :GET) (get-method-pair "GET"))
@@ -21,68 +36,132 @@
    ((eq value :PATCH) (get-method-pair "PATCH"))
    (t (get-method-pair "GET"))))
 
-(defun cou/list? (key)
+;; create-or-update/list?
+;;
+;;
+;; Description:
+;;   procedure for check property on list type by name
+;; Params:
+;;   key  [String]  name of property
+;; Returns:
+;;   result check property on list type (T or nil)
+(defun create-or-update/list? (key)
   (if (search "[]" key) t nil))
 
-(defun cou/test (to-find item)
-    (string= (car item) to-find))
+;; find-param/test
+;;
+;;
+;; Description:
+;;   procedure for find element by property name
+;; Params:
+;;   key   [String]  name of property
+;;   item  [Pair]    property pair
+;; Returns:
+;;   result check (T or nil)
+(defun find-param/test (key item)
+  (string= (car item) key))
 
-(defun update/cou (key value result)
+;; update/create-or-update
+;;
+;;
+;; Description:
+;; Params:
+;;   key     [String]  key for create/update property
+;;   value   [String]  value of property
+;;   result  [List]    list with pair query properties
+;; Returns:
+;;   list with query properies
+(defun update/create-or-update (key value result)
   (let
       ((is-list (create-or-update/list? key))
-       (existed-item (find key result :test #'cou/test)))
-    (if (not existed-item)
-        (let
-            ((new-elem (list (cons key (if (not is-list) value (list valie))))))
-          (append result new-elem))
-      (let
-          ((vexist (cdr existed-item)))
-        (progn
-          (setf vexist (if (not is-list) value (append vexist value)))
-          result)))))
+       (existed-item (find key result :test #'find-param/test)))
+    (cond
+     ((not existed-item)
+      (append result (list (cons key (if (not is-list) value (list value))))))
+     (t
+      (progn
+        (setf (cdr existed-item) (append (cdr existed-item) (list value)))
+        result)))))
 
-(defun query-element/update (elem-pair result)
+;; element/update
+;;
+;;
+;; Description:
+;;   procedure for update list with query params
+;; Params:
+;;   element-list  [Pair]  param pair (key & value)
+;;   result        [List]  list with query params
+;; Results:
+;;   updated list with query params
+(defun element/update (element-list result)
   (let
-      ((key (car elem-pair))
-       (value (cdr elem-pair)))
-    (if (not result)
-        (list (cons key value))
-      (update/cou key value result))))
+      ((key (car element-list))
+       (value (cdr element-list)))
+    (cond
+     ((not result) (list (cons key value)))
+     (t (update/create-or-update key value result)))))
 
-
-(defun query-string/query-element (qlist result)
-  (let
-      ((felem-qlist (first qlist))
-       (relem-qlist (rest qlist))
-       (elem-pair (cl-ppcre:split "="))
-       (current-result (query-element/update elem-pair result)))
-    (if (not relem-qlist) current-result
-      (query-string/query-element relem-qplist result))))
+;; query-string/by-element
+;;
+;;
+;; Descriprion:
+;; Params:
+;;   qlist   [List]  list with query params getted from query string
+;;   result  [List]  list of query params
+;; Returns:
+;;   updated list query params
+(defun query-string/by-element (qlist result)
+  (let*
+      ((first-element (first qlist))
+       (rest-elements (rest qlist))
+       (element-list (cl-ppcre:split "=" first-element))
+       (current-result (element/update element-list result)))
+    (cond
+     ((not rest-elements) current-result)
+     (t (query-string/by-element rest-elements current-result)))))
 
 ;; request/query-string
-(defun request/query-string (value)
-  (let*
-      ((qlist (if (not value) nil (cl-ppcre:split "&" value)))
-       (qplist (if (not qlist) nil (query-string/query-element qlist))))
-    ()))
+;;
+;;
+;; Description:
+;;   procedure for build query params from query string
+;; Params:
+;;   value  [String]  current value of query string
+;; Returns:
+;;   query params list
+(defun request/query-string (value result)
+  (let
+      ((qlist (if (not value) nil (cl-ppcre:split "&" value))))
+    (cons "query-params" (cond
+                          ((not qlist) (list result))
+                          (t (query-string/by-element qlist result))))))
 
 ;; request/headers
+;;
+;; Description:
+;;   procedure for convert headers HashTable to config list
+;; Params:
+;;   headers  [HashTable]  headers hash table
+;; Returns:
+;;   pair with headers property
 (defun request/headers (headers)
-  (if (not headers)
-      nil
-    (let
-        ((headers-keys (alexandria:hash-table-keys headers)))
-      (map 'list
-           (lambda (header-key)
-             (cons header-key (gethash header-key headers))) headers-keys))))
+  (let
+      ((keys (alexandria:hash-table-keys headers)))
+    (cons "headers" (cond
+                      ((not headers) (list nil))
+                      (t (map 'list
+                              (lambda (key)
+                                (cons key (gethash key headers))) keys))))))
 
 ;; request/content-type
 ;;
 ;;
 ;; Description:
 ;;   procedure return content type
+;; Params:
+;;   value  [String]  some value content type property
 ;; Returns:
-;;   
+;;   config pair of content type property
 (defun request/content-type (value)
   (cons "content-type" value))
 
@@ -91,7 +170,11 @@
 ;;
 ;; Description:
 ;;   procedure return unknown property
-(defun requrest/unknown (value)
+;; Params:
+;;   value  [String]  some value unknown property
+;; Returns:
+;;   config pair unknown property
+(defun request/unknown (value)
   (cons "unknown" value))
 
 ;; woo-request->list
@@ -99,13 +182,17 @@
 ;;
 ;; Description:
 ;;   procedure for get list request config from env
-(defun woo-request->list (env)
+;; Params:
+;;   env  [PropertyList]  request RAW property list data
+;; Returns:
+;;   request config list
+(defun woo/env->>request (env)
   (let
-      ((req-keys
+      ((keys
         (list
          :REQUEST-URI
          :PATH-INFO
-         :METHOD
+         :REQUEST-METHOD
          :QUERY-STRING
          :HEADERS
          :CONTENT-TYPE)))
@@ -116,9 +203,8 @@
              (cond
               ((eq key :REQUEST-URI) (request/request-uri value))
               ((eq key :PATH-INFO) (request/path-info value))
-              ((eq key :METHOD) (request/method value))
+              ((eq key :REQUEST-METHOD) (request/method value))
               ((eq key :QUERY-STRING) (request/query-string value nil))
               ((eq key :HEADERS) (request/headers value))
               ((eq key :CONTENT-TYPE) (request/content-type value))
-              (t (request/unknown value)))))
-         req-keys)))
+              (t (request/unknown value))))) keys)))

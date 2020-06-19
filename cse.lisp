@@ -10,21 +10,22 @@
 ;;;;   This iteration based on Common Lisp (develop on SBCL)
 (in-package #:cse)
 
-
-;; woo->run
+;; http->run
 ;;
 ;;
 ;; Description:
-;;   procedure for run Woo server
-;; Params:
+;;   procedure for run HTTP server
+;; Returns:
 ;;   nil
-;; Return:
-;;   nil
-(defun woo->run ()
+(defun http->run ()
   (woo:run
-   (lambda (env) (declare (ignore env))
-     '(200 (:content-type "text/plain") ("Hello, world")))))
-
+   (lambda (env)
+     (let*
+         ((server-config nil)
+          (request (woo/env->>request env))
+          (response (answer->>jsonify (list (cons "message" "Example"))))
+          (content-type "application/json"))
+       `(200 (:content-type ,content-type) (,response))))))
 
 ;; application->start
 ;;
@@ -36,9 +37,9 @@
 ;; Return:
 ;;   nil
 (defun application->start(name)
-  (cond ((string-equal name "http")
-         (bt:make-thread #'woo->run :name name))
-        (t (format t "Not correct name.~%"))))
+  (cond
+    ((string-equal name "http") (bt:make-thread #'http->run :name name))
+    (t (format t "Not correct name (~a) or application type not allowed" name))))
 
 
 ;; kill-thread->iteration
@@ -133,7 +134,6 @@
               (format "Error: can not find thread by name~%")
               nil)
             (thread-by-name->iteration name rest-threads)))))
-
 
 ;; application->get/thread-by-name
 ;;

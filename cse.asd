@@ -14,6 +14,7 @@
                #:cl-ppcre)
   :components ((:file "package")
                (:file "cse")
+               (:file "./src/json-answer")
                (:file "./src/json")
                (:file "./src/woo-server")
                (:file "./src/routes")))

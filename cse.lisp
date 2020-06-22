@@ -147,3 +147,4 @@
 (defun application->get/thread-by-name (name)
   (let ((threads all-threads))
     (thread-by-name->iteration name threads)))
+

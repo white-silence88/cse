@@ -336,14 +336,33 @@
        (is-param (url-param? frtoken))
        (check-tokens (if (not is-param) (string= futoken frtoken) t)))
     (cond
-     ((not check-tokens) nil)
+      ((not check-tokens) nil)
      (t (let
             ((nparams (check/update-params is-param params frtoken futoken)))
           (if (not rutokens)
               (progn
                 (setf (gethash 'url-params rconfig) nparams)
-                t)
-            (route-test/check-tokens rutokens rrtokens rconfig nparams)))))))
+               t)
+            (route-test/check rutokens rrtokens rconfig nparams)))))))
+
+
+(defun sanitize-tokens (raw-data result)
+  (let*
+      ((first-item (first raw-data))
+       (rest-items (rest raw-data))
+       (item-to-add (cond
+                      ((= (length first-item) 0) nil)
+                      (t first-item)))
+       (new-result (if (not result)
+                       (cond
+                         ((not item-to-add) nil)
+                         (t (list item-to-add)))
+                       (cond
+                         ((not item-to-add) result)
+                         (t (append result (list item-to-add)))))))
+    (cond
+      ((not rest-items) new-result)
+      (t (purelize-list rest-items new-result)))))
 
 ;; url->list
 ;;
@@ -355,7 +374,9 @@
 ;; Returns:
 ;;   list with url string tokens
 (defun url->list (url)
-  (cl-ppcre:split "/" url))
+  (let
+      ((raw-list (cl-ppcre:split "/" url)))
+    (sanitize-tokens raw-list nil)))
 
 ;; find/route-test
 ;;
@@ -371,14 +392,17 @@
   (let
       ((rurl (car route))
        (rconfig (cdr route)))
-    (if (string= url rurl)
-        t
-      (let
-          ((utokens (url->list url))
-           (rtokens (url->list rurl)))
-        (if (= (list-length utokens) (list-length rtokens))
-            (route-test/check utokens rtokens rconfig nil)
-          nil)))))
+    (cond
+      ((string= url rurl) t)
+      (t
+       (let*
+           ((utokens (url->list url))
+            (rutokens (url->list rurl))
+            (utokens-length (list-length utokens))
+            (rutokens-length (list-length rutokens)))
+         (if (= rutokens-length utokens-length)
+             (route-test/check utokens rutokens rconfig nil)
+             nil))))))
 
 ;; routes-map/find
 ;;

@@ -1,150 +1,66 @@
 ;;;; cse.lisp
-;;;;
-;;;;
-;;;; Author:
-;;;;   Dmitrii Shevelev <igrave1988@gmail.com>
-;;;; Description:
-;;;;   main package Chainsaw Service Engine. Next iteration
-;;;;   Chainsaw Web Framework (created early on Racket).
-;;;;
-;;;;   This iteration based on Common Lisp (develop on SBCL)
-(in-package #:cse)
+(in-package :cse)
 
-;; http->run
+;; Define default name for server config file
+(defparameter *default-server-config-name* "config.json")
+;; Define default name for routes config file
+(defparameter *default-routes-config-name* "routes.json")
+
+;; get/server-config
 ;;
 ;;
 ;; Description:
-;;   procedure for run HTTP server
+;;   procedure for get server config
+;; Params:
+;;   folder   [String]   fullpath to project folder
+;; Returns:
+;;   config list for server config
+(defun get/server-config (folder)
+  (let
+      ((fullpath (concatenate 'string folder *default-server-config-name*)))
+    (json-file->>tree fullpath)))
+
+;;get/routes-config
+;;
+;;
+;; Description:
+;;   procedure for get routes config list
+;; Params:
+;;   folder   [String]   fullpath to project folder
+;; Returns:
+;;   config list for routes config
+(defun get/routes-config (folder)
+  (let
+      ((fullpath (concatenate 'string folder *default-routes-config-name*)))
+    (json-file->>routes-tree fullpath)))
+
+;; run/application
+;;
+;;
+;; Description:
+;;   procedure for run application
+;; Params:
+;;   application-pair   [Pair]   
+;; Returns:
+;;    nil
+(defun run/application (application-pair routes-config)
+  (let
+      ((application-name (car application-pair))
+       (application-config (cdr application-pair)))
+    (application->start application-name)))
+
+;; run/from-folder
+;;
+;;
+;; Description:
+;;   public procedure for run prlatform with settings from folder
+;; Params:
+;;   folder   [String]   fullpath to project folder
 ;; Returns:
 ;;   nil
-(defun http->run ()
-  (woo:run
-   (lambda (env)
-     (let*
-         ((server-config nil)
-          (request (woo/env->>request env))
-          (response (answer->>jsonify (list (cons "message" "Example"))))
-          (content-type "application/json"))
-       `(200 (:content-type ,content-type) (,response))))))
-
-;; application->start
-;;
-;;
-;; Description:
-;;   procedure for create thread with application
-;; Params:
-;;   name [string] name of service
-;; Return:
-;;   nil
-(defun application->start(name)
-  (cond
-    ((string-equal name "http") (bt:make-thread #'http->run :name name))
-    (t (format t "Not correct name (~a) or application type not allowed" name))))
-
-
-;; kill-thread->iteration
-;;
-;;
-;; Description:
-;;   recursive procedure for kill thread. Thread find by name.
-;; Params:
-;;   name     [string]  name of thread to kill
-;;   threads  [list]    list of threads
-;; Return:
-;;   nil or true
-(defun kill-thread->iteration (name threads)
+(defun run/from-folder (folder)
   (let
-      ((first-thread (first threads))
-       (rest-threads (rest threads)))
-    (if (equal (bt:thread-name first-thread) name)
-        (progn
-          (format t "Success: thread killed~%")
-          (bt:destroy-thread first-thread)
-          t)
-        (if (not rest-threads)
-            (progn
-              (format t "Error: can not found thread. ~%")
-              nil)
-            (kill-thread->iteration name rest-threads)))))
-
-;; application->kill
-;;
-;;
-;; Description:
-;;   public procedure for kill thread by name
-;; Params:
-;;   name   [string]   name of thread to kill
-;; Return:
-;;   true or nil
-(defun application->kill (name)
-  (let
-      ((threads (bt:all-threads)))
-    (kill-thread->iteration name threads)))
-
-;; application->info
-;;
-;;
-;; Description:
-;;   public procedure for get all threads for application server
-;; Return:
-;;   list of application threads
-(defun application->info/threads ()
-  (let*
-      ((current-thread (bt:current-thread))
-       (current-thread-name (bt:thread-name current-thread))
-       (all-threads (bt:all-threads)))
-    (progn
-      (format t "Current thread: ~a~%~%" current-thread)
-      (format t "Current thread name: ~a~%~%" current-thread-name)
-      (format t "All thread: ~% ~{~a~%~}~%" all-threads)
-      all-threads)))
-
-
-;; application->get/threads
-;;
-;;
-;; Description:
-;;   public procedure for get application threads
-;; Params:
-;;   nil
-;; Return:
-;;   list of threads
-(defun application->get/threads ()
-  (bt:all-threads))
-
-
-;; thread-by-name->iteration
-;;
-;;
-;; Description:
-;;   recursive procedure for get thread by name
-;; Params:
-;;   name      [string]    name of thread
-;;   threads   [list]      list of threads
-;; Return:
-;;   thread or nil
-(defun thread-by-name->iteration (name threads)
-  (let
-      ((first-thread (first threads))
-       (rest-threads (rest threads)))
-    (if (equal name (bt:thread-name first-thread))
-        first-thread
-        (if (not rest-threads)
-            (progn
-              (format "Error: can not find thread by name~%")
-              nil)
-            (thread-by-name->iteration name rest-threads)))))
-
-;; application->get/thread-by-name
-;;
-;;
-;; Description:
-;;   public procedure for get thread by name
-;; Params:
-;;   name    [string]    name of thread
-;; Return:
-;;   thread or nil
-(defun application->get/thread-by-name (name)
-  (let ((threads all-threads))
-    (thread-by-name->iteration name threads)))
-
+      ((server-config (get/server-config folder))
+       (routes-config (get/routes-config folder)))
+    (loop for application-pair in server-config
+          do (run/application application-pair routes-config))))

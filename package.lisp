@@ -2,6 +2,7 @@
 (defpackage #:cse
   (:use #:cl)
   (:export
+   #:run/from-folder
    #:json-file->>tree
    #:json-file->>routes-tree
    #:routes-config->>routes-map

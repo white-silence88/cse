@@ -1,5 +1,28 @@
 (in-package #:cse)
 
+;; Define minimal lengt for lists and strings
+(defparameter *min-lengt* 0)
+;; Define separator for URL strings
+(defparameter *separator* "/")
+;; Define start of name index in URL token
+(defparameter *start-name-index* 1)
+;; Define parameter string patter symbol
+(defparameter *param-symbol* ":")
+;; Define first index number for lists and strings
+(defparameter *zero-index* 0)
+;; Define routes field name
+(defparameter *routes-field* "routes")
+;; Define handler field name
+(defparameter *handler-field* "handler")
+;; Define methods field name
+(defparameter *methods-field* "methods")
+;; Define description field name
+(defparameter *description-field* "description")
+;; Define on-request field name
+(defparameter *on-request-field* "on-request")
+;; Define on-response field name
+(defparameter *on-response-field* "on-response")
+
 ;; pair/test-on-name
 ;;
 ;;
@@ -29,7 +52,7 @@
 ;;   nil as compare result is False.
 (defun group? (data)
   (let
-      ((result (find "routes" data :test #'pair/test-on-name)))
+      ((result (find *routes-field* data :test #'pair/test-on-name)))
     (cond
       ((not result) nil)
       (t t))))
@@ -165,12 +188,11 @@
     (tname tbody desc req-mid res-mid result prefix)
   (let*
       ((path (parser/update-path-or-prefix tname prefix))
-       (handler (config-property->get tbody "handler"))
-       (methods (config-property->get tbody "methods"))
-       (fields
-        (route-config/make-config-list
-         (list desc methods req-mid res-mid handler)
-         (list 'description 'method 'on-request 'on-response 'hander)))
+       (handler (config-property->get tbody *handler-field*))
+       (methods (config-property->get tbody *methods-field*))
+       (values (list desc methods req-mid res-mid handler))
+       (keys (list 'description 'method 'on-request 'on-response 'hander))
+       (fields (route-config/make-config-list values keys))
        (config (route-config/make fields))
        (pair-list (list (cons path config))))
     (cond
@@ -219,7 +241,7 @@
 (defun parser/group-iteration (tname tbody req-mid res-mid result prefix)
   (let*
       ((new-prefix (parser/update-path-or-prefix prefix tname))
-       (internal (config-property->get tbody "routes")))
+       (internal (config-property->get tbody *routes-field*)))
     (group-iteration/map internal req-mid res-mid result new-prefix)))
 
 ;; config/parser
@@ -240,9 +262,9 @@
       ((tname (car tree))
        (tbody (cdr tree))
        (is-group (group? tbody))
-       (cur-req-mid (middlewares/add tbody "on-request" req-middlewares))
-       (cur-res-mid (middlewares/add tbody "on-request" res-middlewares))
-       (desc (config-property->get tbody "description")))
+       (cur-req-mid (middlewares/add tbody *on-request-field* req-middlewares))
+       (cur-res-mid (middlewares/add tbody *on-response-field* res-middlewares))
+       (desc (config-property->get tbody *description-field*)))
     (cond
      ((not is-group)
       (parser/add-pair
@@ -291,10 +313,10 @@
 ;;   route-token   [String]   url token
 ;; Returns:
 ;;   result check on url param token (True - t, False - nil)
-(defun url-param? (route-token)
-  (if (string= ":" (subseq route-token 0 1)) t nil))
+(defun is-url-param? (route-token)
+  (string= *param-symbol* (subseq route-token *zero-index* *start-name-index*)))
 
-;; check-tokens/update-params
+;; params/update
 ;;
 ;;
 ;; Description:
@@ -306,14 +328,25 @@
 ;;   value      [Value]        value of url param
 ;; Returns:
 ;;   list of url params
-(defun check/update-params (is-param params name value)
+(defun params/update (is-param params name value)
   (if (eq is-param t)
       (let
-          ((palist (list (cons (subseq name 1) value))))
+          ((palist (list (cons (subseq name *start-name-index*) value))))
         (cond
          ((not params) palist)
          (t (append params palist))))
-    params))
+      params))
+
+;; compare-lists/compare-tokens
+;;
+;;
+;; Description:
+;; Params:
+;; Returns
+(defun compare-tokens (is-param request-url-token route-url-token)
+  (if (not is-param)
+      (string= request-url-token route-url-token)
+      t))
 
 ;; route-test/check-tokens
 ;;
@@ -321,48 +354,40 @@
 ;; Description:
 ;;   procedure for compare url list and route list
 ;; Params:
-;;   utokens   [List]        list with string request url tokens
-;;   rtokens   [List]        list with string route url tokens
-;;   rconfig   [HashTable]   HashTable with routw config
-;;   params    [List|nil]    alist with route url params
+;;   request-url-tokens   [List]        list with string request url tokens
+;;   route-url-tokens     [List]        list with string route url tokens
+;;   route-config         [HashTable]   HashTable with routw config
+;;   params               [List|nil]    alist with route url params
 ;; Returns:
 ;;   return result check True (t) or False (nil)
-(defun route-test/check (utokens rtokens rconfig params)
+(defun compare-lists (request-url-tokens route-url-tokens route-config params)
   (let*
-      ((futoken (first utokens))
-       (rutokens (rest utokens))
-       (frtoken (first rtokens))
-       (rrtokens (rest rtokens))
-       (is-param (url-param? frtoken))
-       (check-tokens (if (not is-param) (string= futoken frtoken) t)))
+      ((first-request-url-token (first request-url-tokens))
+       (rest-request-url-tokens (rest request-url-tokens))
+       (first-route-url-token (first route-url-tokens))
+       (rest-route-url-tokens (rest route-url-tokens))
+       (is-param (is-url-param? first-route-url-token))
+       (compare-result (compare-tokens is-param first-route-url-token first-request-url-token))
+       (new-params (params/update is-param params first-route-url-token first-request-url-token)))
     (cond
-      ((not check-tokens) nil)
-     (t (let
-            ((nparams (check/update-params is-param params frtoken futoken)))
-          (if (not rutokens)
-              (progn
-                (setf (gethash 'url-params rconfig) nparams)
+      ((not compare-result) nil)
+      (t (if (not rest-request-url-tokens)
+             (progn
+               (setf (gethash 'url-params route-config) new-params)
                t)
-            (route-test/check rutokens rrtokens rconfig nparams)))))))
+             (compare-lists
+              rest-request-url-tokens rest-route-url-tokens route-config new-params))))))
 
-
-(defun sanitize-tokens (raw-data result)
-  (let*
-      ((first-item (first raw-data))
-       (rest-items (rest raw-data))
-       (item-to-add (cond
-                      ((= (length first-item) 0) nil)
-                      (t first-item)))
-       (new-result (if (not result)
-                       (cond
-                         ((not item-to-add) nil)
-                         (t (list item-to-add)))
-                       (cond
-                         ((not item-to-add) result)
-                         (t (append result (list item-to-add)))))))
-    (cond
-      ((not rest-items) new-result)
-      (t (purelize-list rest-items new-result)))))
+;; check-tokens/length
+;;
+;; Description:
+;;   procedure for check token on zero length (for remove-if macros)
+;; Params:
+;;   token   [String]  element (URL token) for check
+;; Returns:
+;;   result of check (compare length and zero-length)
+(defun check-tokens/length (token)
+  (if (= (length token) *min-lengt*) t nil))
 
 ;; url->list
 ;;
@@ -375,8 +400,29 @@
 ;;   list with url string tokens
 (defun url->list (url)
   (let
-      ((raw-list (cl-ppcre:split "/" url)))
-    (sanitize-tokens raw-list nil)))
+      ((raw (cl-ppcre:split *separator* url)))
+    (remove-if #'check-tokens/length raw)))
+
+;; route-test/not-equals
+;;
+;;
+;; Description:
+;;   procedure for run test for routes with not equal urls
+;; Params:
+;;   request-url    [String]      URL from request
+;;   route-url      [String]      URL pattern from route settings
+;;   route-config   [HashTable]   HashTable with route config
+;; Returns:
+;;   result check. True (t) if pattern is corrent, or False (nil) if pattern not equal
+;;   requst url.
+(defun route-test/not-equals (request-url route-url route-config)
+  (let
+      ((request-url-tokens (url->list request-url))
+       (route-url-tokens (url->list route-url)))
+    (cond
+      ((= (list-length request-url-tokens) (list-length route-url-tokens))
+       (compare-lists request-url-tokens route-url-tokens route-config nil))
+      (t nil))))
 
 ;; find/route-test
 ;;
@@ -384,25 +430,17 @@
 ;; Description:
 ;;   procedure for check route and url equals
 ;; Params:
-;;   url   [String]  request URL
-;;   route [Pair]    pair with url-pattern (string) and config (HashTable)
+;;   request-url  [String]  request URL
+;;   route-pair   [Pair]    pair with url-pattern (string) and config (HashTable)
 ;; Returns:
 ;;   test result as True (t) or nil
-(defun find/route-test (url route)
+(defun find/route-test (request-url route-pair)
   (let
-      ((rurl (car route))
-       (rconfig (cdr route)))
+      ((route-url (car route-pair))
+       (route-config (cdr route-pair)))
     (cond
-      ((string= url rurl) t)
-      (t
-       (let*
-           ((utokens (url->list url))
-            (rutokens (url->list rurl))
-            (utokens-length (list-length utokens))
-            (rutokens-length (list-length rutokens)))
-         (if (= rutokens-length utokens-length)
-             (route-test/check utokens rutokens rconfig nil)
-             nil))))))
+      ((string= request-url route-url) t)
+      (t (route-test/not-equals request-url route-url route-config)))))
 
 ;; routes-map/find
 ;;

@@ -30,11 +30,11 @@
   (cond
     ((string-equal name "http")
      (progn
-       (log:info "Starting thread with name \"~a\"....~%" name)
+       (log:info "Starting thread with name \"~a\"...." name)
        (bt:make-thread #'http->run :name name)
        (log:info "Thread started. Find in threads...")
        (log:info "Thread info: ~a~%" (application->get/thread-by-name name))))
-    (t (log:error "Not correct name (~a) or application type not allowed" name))))
+    (t (log:error "Not correct name (~a) or application type not allowed.~%" name))))
 
 
 ;; thread/check-name

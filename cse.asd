@@ -11,6 +11,7 @@
                #:alexandria
                #:bt-semaphore
                #:jonathan
+               #:log4cl
                #:cl-ppcre)
   :components ((:file "package")
                (:file "cse")

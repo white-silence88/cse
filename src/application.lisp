@@ -1,5 +1,18 @@
 (in-package :cse)
 
+;; request/get<-check
+;;
+;;
+;; Description:
+;;   procedure for check name of finded property and property name from pair
+;; Params:
+;;   property   [String] name of property
+;;   item       [Pair]   pair with property name and value
+;; Returns:
+;;   result check (T or nil)
+(defun request/get<-check (property item)
+  (string= property (car item)))
+
 ;; http->run
 ;;
 ;;
@@ -7,15 +20,23 @@
 ;;   procedure for run HTTP server
 ;; Returns:
 ;;   nil
-(defun http->run ()
-  (woo:run
-   (lambda (env)
-     (let*
-         ((server-config nil)
-          (request (woo/env->>request env))
-          (response (answer->>jsonify (list (cons "message" "Example"))))
-          (content-type "application/json"))
-       `(200 (:content-type ,content-type) (,response))))))
+(defun http->run (routes-config)
+  (let
+      ((routes-map (routes-config->>routes-map routes-config)))
+    (woo:run
+     (lambda (env)
+       (let*
+           ((server-config nil)
+            (request (woo/env->>request env))
+            (request-url-pair (find "base-url" request :test #'request/get<-check))
+            (request-url (cdr request-url-pair))
+            (route (routes-map/find routes-map request-url))
+            (success (answer->>jsonify (list (cons "message" "Route is found"))))
+            (not-found (answer->>jsonify (list (cons "message" "Not found"))))
+            (content-type "application/json"))
+         (cond
+           ((not route) `(404 (:content-type ,content-type) (,not-found)))
+           (t `(200 (:content-type ,content-type) (,success)))))))))
 
 ;; application->start
 ;;
@@ -26,12 +47,12 @@
 ;;   name [string] name of service
 ;; Return:
 ;;   nil
-(defun application->start(name)
+(defun application->start(name routes-config)
   (cond
     ((string-equal name "http")
      (progn
        (log:info "Starting thread with name \"~a\"...." name)
-       (bt:make-thread #'http->run :name name)
+       (bt:make-thread (lambda () (http->run routes-config)) :name name)
        (log:info "Thread started. Find in threads...")
        (log:info "Thread info: ~a~%" (application->get/thread-by-name name))))
     (t (log:error "Not correct name (~a) or application type not allowed.~%" name))))

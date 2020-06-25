@@ -48,7 +48,7 @@
     ((string= type "client-errors") *default-client-errors-config-name*)
     ((string= type "success") *default-success-config-name*)
     ((string= type "server") *default-server-config-name*)
-    ((string= type "routes") *default-server-config-name*)
+    ((string= type "routes") *default-routes-config-name*)
     (t nil)))
 
 ;; from-folder/json->tree
@@ -123,7 +123,7 @@
   (let
       ((application-name (car application-pair))
        (application-config (cdr application-pair)))
-    (application->start application-name)))
+    (application->start application-name routes-config)))
 
 ;; run/from-folder
 ;;

@@ -18,5 +18,6 @@
                (:file "./src/application")
                (:file "./src/json-answer")
                (:file "./src/json")
+               (:file "./src/utils")
                (:file "./src/woo-server")
                (:file "./src/routes")))

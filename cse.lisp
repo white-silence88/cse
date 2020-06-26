@@ -117,13 +117,15 @@
 ;;   procedure for run application
 ;; Params:
 ;;   application-pair   [Pair]   config pair
+;;   routes-config      [List]   routes config list
+;;   answers-config     [List]   answers config list
 ;; Returns:
 ;;    nil
-(defun run/application (application-pair routes-config)
+(defun run/application (application-pair routes-config answers-config)
   (let
       ((application-name (car application-pair))
        (application-config (cdr application-pair)))
-    (application->start application-name routes-config)))
+    (application->start application-name routes-config answers-config)))
 
 ;; run/from-folder
 ;;
@@ -140,4 +142,4 @@
        (routes-config (get/routes-config folder))
        (answers-config (get/answers-config folder)))
     (loop for application-pair in server-config
-          do (run/application application-pair routes-config))))
+          do (run/application application-pair routes-config answers-config))))

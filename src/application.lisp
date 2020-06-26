@@ -1,42 +1,34 @@
 (in-package :cse)
 
-;; request/get<-check
-;;
-;;
-;; Description:
-;;   procedure for check name of finded property and property name from pair
-;; Params:
-;;   property   [String] name of property
-;;   item       [Pair]   pair with property name and value
-;; Returns:
-;;   result check (T or nil)
-(defun request/get<-check (property item)
-  (string= property (car item)))
-
 ;; http->run
 ;;
 ;;
 ;; Description:
 ;;   procedure for run HTTP server
+;; Params:
+;;   routes-config    [List]   routes config list
+;;   answers-config   [List]   answers config list
 ;; Returns:
 ;;   nil
-(defun http->run (routes-config)
+(defun http->run (routes-config answers-config)
   (let
-      ((routes-map (routes-config->>routes-map routes-config)))
+      ((routes-map (routes-config->>routes-map routes-config))
+       (success (config/get "success" answers-config))
+       (redirection (config/get "redirection" answers-config))
+       (informational (config/get "informational" answers-config))
+       (client-errors (config/get "client-errors" answers-config))
+       (server-errors (config/get "server-errors" answers-config)))
     (woo:run
      (lambda (env)
        (let*
            ((server-config nil)
             (request (woo/env->>request env))
-            (request-url-pair (find "base-url" request :test #'request/get<-check))
-            (request-url (cdr request-url-pair))
+            (request-url (config/get "base-url" request))
             (route (routes-map/find routes-map request-url))
-            (success (answer->>jsonify (list (cons "message" "Route is found"))))
-            (not-found (answer->>jsonify (list (cons "message" "Not found"))))
             (content-type "application/json"))
          (cond
-           ((not route) `(404 (:content-type ,content-type) (,not-found)))
-           (t `(200 (:content-type ,content-type) (,success)))))))))
+           ((not route) (answers/errors->notFound client-errors content-type))
+           (t (answers/get-success success content-type "ok"))))))))
 
 ;; application->start
 ;;
@@ -44,15 +36,17 @@
 ;; Description:
 ;;   procedure for create thread with application
 ;; Params:
-;;   name [string] name of service
+;;   name              [String]   name of service
+;;   routs-config      [List]     routes config list
+;;   answers-config    [List]     answers config list
 ;; Return:
 ;;   nil
-(defun application->start(name routes-config)
+(defun application->start(name routes-config answers-config)
   (cond
     ((string-equal name "http")
      (progn
        (log:info "Starting thread with name \"~a\"...." name)
-       (bt:make-thread (lambda () (http->run routes-config)) :name name)
+       (bt:make-thread (lambda () (http->run routes-config answers-config)) :name name)
        (log:info "Thread started. Find in threads...")
        (log:info "Thread info: ~a~%" (application->get/thread-by-name name))))
     (t (log:error "Not correct name (~a) or application type not allowed.~%" name))))

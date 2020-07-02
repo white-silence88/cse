@@ -16,9 +16,9 @@
    ;;; API for work with WOO server
    #:woo/env->>request
    ;;; API for get JSON API answer (simple SEON standard)
-   #:seon-answer/succes
-   #:seon-answer/errors
-   #:seon-answer/errors->not-found
+   #:seon-answers/success
+   #:seon-answers/errors
+   #:seon-answers/errors->not-found
    ;;; Procedures from utils
    #:config/get
    ;;; API for get some from configs

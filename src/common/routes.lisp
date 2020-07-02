@@ -1,28 +1,4 @@
 (in-package #:cse)
-
-;; Define minimal lengt for lists and strings
-(defparameter *min-lengt* 0)
-;; Define separator for URL strings
-(defparameter *separator* "/")
-;; Define start of name index in URL token
-(defparameter *start-name-index* 1)
-;; Define parameter string patter symbol
-(defparameter *param-symbol* ":")
-;; Define first index number for lists and strings
-(defparameter *zero-index* 0)
-;; Define routes field name
-(defparameter *routes-field* "routes")
-;; Define handler field name
-(defparameter *handler-field* "handler")
-;; Define methods field name
-(defparameter *methods-field* "methods")
-;; Define description field name
-(defparameter *description-field* "description")
-;; Define on-request field name
-(defparameter *on-request-field* "on-request")
-;; Define on-response field name
-(defparameter *on-response-field* "on-response")
-
 ;; pair/test-on-name
 ;;
 ;;
@@ -52,7 +28,7 @@
 ;;   nil as compare result is False.
 (defun group? (data)
   (let
-      ((result (find *routes-field* data :test #'pair/test-on-name)))
+      ((result (find *route-config-routes-field* data :test #'pair/test-on-name)))
     (cond
       ((not result) nil)
       (t t))))
@@ -188,8 +164,8 @@
     (tname tbody desc req-mid res-mid result prefix)
   (let*
       ((path (parser/update-path-or-prefix tname prefix))
-       (handler (config-property->get tbody *handler-field*))
-       (methods (config-property->get tbody *methods-field*))
+       (handler (config-property->get tbody *route-config-handler-field*))
+       (methods (config-property->get tbody *route-config-methods-field*))
        (values (list desc methods req-mid res-mid handler))
        (keys (list 'description 'method 'on-request 'on-response 'hander))
        (fields (route-config/make-config-list values keys))
@@ -241,7 +217,7 @@
 (defun parser/group-iteration (tname tbody req-mid res-mid result prefix)
   (let*
       ((new-prefix (parser/update-path-or-prefix prefix tname))
-       (internal (config-property->get tbody *routes-field*)))
+       (internal (config-property->get tbody *route-config-routes-field*)))
     (group-iteration/map internal req-mid res-mid result new-prefix)))
 
 ;; config/parser
@@ -262,9 +238,11 @@
       ((tname (car tree))
        (tbody (cdr tree))
        (is-group (group? tbody))
-       (cur-req-mid (middlewares/add tbody *on-request-field* req-middlewares))
-       (cur-res-mid (middlewares/add tbody *on-response-field* res-middlewares))
-       (desc (config-property->get tbody *description-field*)))
+       (cur-req-mid
+        (middlewares/add tbody *route-config-on-request-field* req-middlewares))
+       (cur-res-mid
+        (middlewares/add tbody *route-config-on-response-field* res-middlewares))
+       (desc (config-property->get tbody *route-config-description-field*)))
     (cond
      ((not is-group)
       (parser/add-pair
@@ -400,7 +378,7 @@
 ;;   list with url string tokens
 (defun url->list (url)
   (let
-      ((raw (cl-ppcre:split *separator* url)))
+      ((raw (cl-ppcre:split *url-separator* url)))
     (remove-if #'check-tokens/length raw)))
 
 ;; route-test/not-equals

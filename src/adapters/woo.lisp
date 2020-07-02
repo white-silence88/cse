@@ -1,23 +1,24 @@
+;; woo.lisp
 (in-package #:cse)
 
 ;; request/request-uri
 (defun request/request-uri (value)
-  (cons "full-url" value))
+  (cons *default-fullurl-field* value))
 
 ;; request/path-info
 (defun request/path-info (value)
-  (cons "base-url" value))
+  (cons *default-baseurl-field* value))
 
 ;; get-method-pair
 ;;
 ;; Description:
 ;;   method for get pair with method name
-;; Params:
+;; Params:Ну как - 
 ;;   method-name  [String]  name of request method
 ;; Returns:
 ;;   pair with name property (method) and name
 (defun get-method-pair (method-name)
-  (cons "method" method-name))
+  (cons *default-method-field* method-name))
 
 ;; request/method
 ;;
@@ -29,12 +30,12 @@
 ;;   pair with name property (method) and name
 (defun request/method (value)
   (cond
-   ((eq value :GET) (get-method-pair "GET"))
-   ((eq value :POST) (get-method-pair "POST"))
-   ((eq value :PUT) (get-method-pair "PUT"))
-   ((eq value :DELETE) (get-method-pair "DELETE"))
-   ((eq value :PATCH) (get-method-pair "PATCH"))
-   (t (get-method-pair "GET"))))
+   ((eq value :GET) (get-method-pair *http-method-get*))
+   ((eq value :POST) (get-method-pair *http-method-post*))
+   ((eq value :PUT) (get-method-pair *http-method-put*))
+   ((eq value :DELETE) (get-method-pair *http-method-delete*))
+   ((eq value :PATCH) (get-method-pair *http-method-pathc*))
+   (t (get-method-pair *http-method-get*))))
 
 ;; create-or-update/list?
 ;;
@@ -46,7 +47,7 @@
 ;; Returns:
 ;;   result check property on list type (T or nil)
 (defun create-or-update/list? (key)
-  (if (search "[]" key) t nil))
+  (if (search *array-query-symbols* key) t nil))
 
 ;; find-param/test
 ;;
@@ -114,7 +115,7 @@
   (let*
       ((first-element (first qlist))
        (rest-elements (rest qlist))
-       (element-list (cl-ppcre:split "=" first-element))
+       (element-list (cl-ppcre:split *query-string-separator* first-element))
        (current-result (element/update element-list result)))
     (cond
      ((not rest-elements) current-result)
@@ -131,10 +132,13 @@
 ;;   query params list
 (defun request/query-string (value result)
   (let
-      ((qlist (if (not value) nil (cl-ppcre:split "&" value))))
-    (cons "query-params" (cond
-                          ((not qlist) (list result))
-                          (t (query-string/by-element qlist result))))))
+      ((qlist (if (not value)
+                  nil
+                (cl-ppcre:split *query-params-separator* value))))
+    (cons *default-query-params-field*
+          (cond
+           ((not qlist) (list result))
+           (t (query-string/by-element qlist result))))))
 
 ;; request/headers
 ;;
@@ -147,11 +151,12 @@
 (defun request/headers (headers)
   (let
       ((keys (alexandria:hash-table-keys headers)))
-    (cons "headers" (cond
-                      ((not headers) (list nil))
-                      (t (map 'list
-                              (lambda (key)
-                                (cons key (gethash key headers))) keys))))))
+    (cons *default-headers-field* (cond
+                                   ((not headers) (list nil))
+                                   (t (map 'list
+                                           (lambda (key)
+                                             (cons key (gethash key headers)))
+                                           keys))))))
 
 ;; request/content-type
 ;;
@@ -163,7 +168,7 @@
 ;; Returns:
 ;;   config pair of content type property
 (defun request/content-type (value)
-  (cons "content-type" value))
+  (cons *default-content-type-field* value))
 
 ;; request/unknown
 ;;
@@ -175,7 +180,7 @@
 ;; Returns:
 ;;   config pair unknown property
 (defun request/unknown (value)
-  (cons "unknown" value))
+  (cons *default-unknown-field* value))
 
 ;; woo-request->list
 ;;

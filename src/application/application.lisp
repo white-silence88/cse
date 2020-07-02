@@ -1,5 +1,4 @@
 (in-package :cse)
-
 ;; http->run
 ;;
 ;;
@@ -13,22 +12,24 @@
 (defun http->run (routes-config answers-config)
   (let
       ((routes-map (routes-config->>routes-map routes-config))
-       (success (config/get "success" answers-config))
-       (redirection (config/get "redirection" answers-config))
-       (informational (config/get "informational" answers-config))
-       (client-errors (config/get "client-errors" answers-config))
-       (server-errors (config/get "server-errors" answers-config)))
+       (success (config/get *default-success-field* answers-config))
+       (redirection (config/get *default-redirection-field* answers-config))
+       (informational (config/get *default-informational-field* answers-config))
+       (client-errors (config/get *default-client-errors-field* answers-config))
+       (server-errors (config/get *default-server-errors-field* answers-config)))
     (woo:run
      (lambda (env)
        (let*
            ((server-config nil)
             (request (woo/env->>request env))
-            (request-url (config/get "base-url" request))
+            (request-url (config/get *default-baseurl-field* request))
             (route (routes-map/find routes-map request-url))
-            (content-type "application/json"))
+            (content-type *content-type-for-api*))
          (cond
-           ((not route) (answers/errors->notFound client-errors content-type))
-           (t (answers/get-success success content-type "ok"))))))))
+          ((not route)
+           (seon-answers/errors->not-found client-errors content-type))
+          (t
+           (seon-answers/success success content-type *ok*))))))))
 
 ;; application->start
 ;;
@@ -43,13 +44,13 @@
 ;;   nil
 (defun application->start(name routes-config answers-config)
   (cond
-    ((string-equal name "http")
-     (progn
-       (log:info "Starting thread with name \"~a\"...." name)
-       (bt:make-thread (lambda () (http->run routes-config answers-config)) :name name)
-       (log:info "Thread started. Find in threads...")
-       (log:info "Thread info: ~a~%" (application->get/thread-by-name name))))
-    (t (log:error "Not correct name (~a) or application type not allowed.~%" name))))
+   ((string-equal name *application/http*)
+    (progn
+      (log:info "Starting thread with name \"~a\"...." name)
+      (bt:make-thread (lambda () (http->run routes-config answers-config)) :name name)
+      (log:info "Thread started. Find in threads...")
+      (log:info "Thread info: ~a~%" (application->get/thread-by-name name))))
+   (t (log:error "Not correct name (~a) or application type not allowed.~%" name))))
 
 
 ;; thread/check-name
@@ -142,4 +143,3 @@
         ((not thread) (log:warn "Can not find thread with name \"~a\".~%" name))
         (t (log:info "Thread with name \"~a\" was finded.~%" name)))
       thread)))
-

@@ -1,5 +1,5 @@
+;; json-file
 (in-package #:cse)
-
 ;; tree/build-key
 ;;
 ;;
@@ -31,9 +31,11 @@
 ;; Returns:
 (defun tree<-get-value (value type)
   (cond
-    ((typep value 'hash-table) (hash->>tree (alexandria:hash-table-keys value) value type))
-    ((typep value 'list) (list value))
-    (t value)))
+   ((typep value 'hash-table)
+    (hash->>tree (alexandria:hash-table-keys value) value type))
+   ((typep value 'list)
+    (list value))
+   (t value)))
 
 ;; hash->>tree/iteration
 ;;
@@ -49,7 +51,14 @@
 (defun hash->>tree/iteration (key content type)
   (let
       ((value (gethash key content))
-       (reserved (list "routes" "description" "on-request" "on-response" "methods" "handler")))
+       (reserved
+        (list
+         *route-config-routes-field*
+         *route-config-description-field*
+         *route-config-on-request-field*
+         *route-config-on-response-field*
+         *route-config-methods-field*
+         *route-config-handler-field*)))
     (cons (tree<-get-key key type reserved) (tree<-get-value value type))))
 
 ;; hash->>tree
@@ -64,7 +73,10 @@
 ;; Returns:
 ;;   routes tree
 (defun hash->>tree (keys content type)
-  (map 'list (lambda (key) (hash->>tree/iteration key content type)) keys))
+  (map 'list
+       (lambda (key)
+         (hash->>tree/iteration key content type))
+       keys))
 
 
 ;; file->hash->tree
@@ -94,7 +106,7 @@
 ;; Returns:
 ;;   routes tree from JSON file
 (defun json-file->>routes-tree (filepath)
-  (file->hash->tree filepath "routes"))
+  (file->hash->tree filepath *routes-tree*))
 
 ;; file->>tree
 ;;
@@ -106,4 +118,5 @@
 ;; Returns:
 ;;   tree from JSON file
 (defun json-file->>tree (filepath)
-  (file->hash->tree filepath "common"))
+  (file->hash->tree filepath *simple-tree*))
+

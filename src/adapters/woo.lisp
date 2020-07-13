@@ -34,7 +34,7 @@
    ((eq value :POST) (get-method-pair *http-method-post*))
    ((eq value :PUT) (get-method-pair *http-method-put*))
    ((eq value :DELETE) (get-method-pair *http-method-delete*))
-   ((eq value :PATCH) (get-method-pair *http-method-pathc*))
+   ((eq value :PATCH) (get-method-pair *http-method-patch*))
    (t (get-method-pair *http-method-get*))))
 
 ;; create-or-update/list?

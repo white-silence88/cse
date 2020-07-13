@@ -28,5 +28,8 @@
 (defun seon-answers/errors->not-found (client-errors-config content-type)
   (seon-answers/errors client-errors-config content-type *not-found-config-key*))
 
+(defun seon-answers/errors->method-not-allowed (client-errors-config content-type)
+  (seon-answers/errors client-errors-config content-type *method-not-allowed-config-key*))
+
 (defun seon-answers/success (success-config content-type key)
   (seon-answers->answer "success" success-config content-type key))

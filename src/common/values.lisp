@@ -133,6 +133,8 @@
 (defparameter *ok* "ok")
 ;;; Define parameter name of not found key
 (defparameter *not-found-config-key* "notFound")
+;;; Define parameter name of not allowed method
+(defparameter *method-not-allowed-config-key* "methodNotAllowed")
 
 ;;
 ;; ============================================================================

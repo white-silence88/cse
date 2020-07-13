@@ -167,7 +167,7 @@
        (handler (config-property->get tbody *route-config-handler-field*))
        (methods (config-property->get tbody *route-config-methods-field*))
        (values (list desc methods req-mid res-mid handler))
-       (keys (list 'description 'method 'on-request 'on-response 'hander))
+       (keys (list 'description 'methods 'on-request 'on-response 'handlers))
        (fields (route-config/make-config-list values keys))
        (config (route-config/make fields))
        (pair-list (list (cons path config))))

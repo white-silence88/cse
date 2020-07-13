@@ -33,8 +33,6 @@
   (cond
    ((typep value 'hash-table)
     (hash->>tree (alexandria:hash-table-keys value) value type))
-   ((typep value 'list)
-    (list value))
    (t value)))
 
 ;; hash->>tree/iteration

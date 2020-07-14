@@ -1,53 +1,4 @@
 (in-package :cse)
-
-
-;; reaction/route-not-found
-;;
-;;
-;; Description:
-;;   procedure for get answer, when route not found
-;; Params:
-;;   client-errors  [List]    config list for client errors
-;;   content-type   [String]  content type
-;; Returns:
-;;   nil
-(defun reaction/route-not-found (client-errors content-type)
-  (seon-answers/errors->not-found client-errors content-type))
-
-;; check-method-on-allowed
-;;
-;;
-;; Description:
-;;   procedure check method on allowed
-;; Params:
-;;   request-method   [String]   name of method from request
-;;   route-methods    [List]     list of simple array charaset (allowed method names)
-;; Returns:
-;;   result check. Procedure return True (T) when method allowed.
-;;   Procedure return False (nil) when method not allowed
-(defun check-method-on-allowed (request-method route-methods)
-  (let
-      ((method-to-check (string-downcase request-method)))
-    (if (member method-to-check route-methods :test (lambda (k v) (string= k (string v)))) t nil)))
-
-;; reaction/route-is-found
-;;
-;;
-;; Description:
-;; Params:
-;; Returns:
-(defun reaction/route-is-found
-    (content-type request route success redirection informational client-errors server-errors)
-  (let*
-      ((route-config (cdr route))
-       (route-methods (gethash 'methods route-config))
-       (request-method (string-downcase (config/get "method" request))))
-    (if (not (check-method-on-allowed request-method route-methods))
-        (progn
-          (log:error "Method \"~a\" not allowed. Not correct request~%" request-method)
-          (seon-answers/errors->method-not-allowed client-errors content-type))
-        (seon-answers/success success content-type *ok*))))
-
 ;; http->run
 ;;
 ;;
@@ -76,9 +27,9 @@
             (content-type *content-type-for-api*))
          (cond
           ((not route)
-           (reaction/route-not-found client-errors content-type))
+           (conrollres/routes->not-found client-errors content-type))
           (t
-           (reaction/route-is-found
+           (conrollres/routes->founded
             content-type
             request
             route

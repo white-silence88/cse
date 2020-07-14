@@ -17,6 +17,7 @@
                (:file "cse")
                (:file "./src/utils/checks")
                (:file "./src/common/middlewares")
+               (:file "./src/handlers/base-handler")
                (:file "./src/common/values")
                (:file "./src/common/answer")
                (:file "./src/common/json-file")

@@ -40,12 +40,21 @@
           (log:error "Method \"~a\" not allowed. Not correct request~%" request-method)
           (seon-answers/errors->method-not-allowed client-errors content-type))
         (let*
-            ((result (if (not on-request)
-                        (cons request nil)
-                        (middlewares/loop on-request request nil)))
-             (req (car result))
-             (errs (cdr result)))
-          (log:info "REQ: ~a~% " req)
+            ((updated (if (not on-request)
+                          (cons request nil)
+                          (middlewares/loop on-request request nil nil)))
+             (result (base-handler (config/get "request" updated) nil (config/get "errors" updated)))
+             (final (cond
+                      ((not on-response) result)
+                      (t (middlewares/loop on-response
+                                           (config/get "request" result)
+                                           (config/get "response" result)
+                                           (config/get "errors" result)))))
+             (req (config/get "request" final))
+             (errs (config/get "response" final))
+             (res (config/get "errors" final)))
+          (log:info "REQ: ~a~%" req)
+          (log:info "RES: ~a~%" res)
           (log:info "ERRS: ~a~%" errs)
           (cond
             ((not errs)

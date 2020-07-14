@@ -6,15 +6,23 @@
 ;; Descriprion:
 ;; Params:
 ;; Returns:
-(defun middlewares/loop (middlewares request errors)
+(defun middlewares/loop (middlewares request response errors)
   (let*
       ((middleware-name (string (first middlewares)))
        (rest-middlewares (rest middlewares))
-       (middleware-symbol (if (not middleware-name) nil (find-symbol (string-upcase middleware-name))))
-       (middleware-fn (if (not middleware-symbol) nil (symbol-function middleware-symbol)))
-       (result (if (not middleware-fn)
-                   (cons request errors)
-                   (funcall middleware-fn request errors))))
+       (middleware-symbol (cond
+                            ((not middleware-name) nil)
+                            (t (find-symbol (string-upcase middleware-name)))))
+       (middleware-fn (cond
+                        ((not middleware-symbol) nil)
+                        (t (symbol-function middleware-symbol))))
+       (result (cond
+                 ((not middleware-fn)
+                  (list (cons "request" request) (cons "response" response) (cons "errors" errors)))
+                 (t (funcall middleware-fn request response errors)))))
     (cond
       ((not rest-middlewares) result)
-      (t (middlewares/loop rest-middlewares (car result) (cdr result))))))
+      (t (middlewares/loop rest-middlewares
+                           (config/get "request" result)
+                           (config/get "response" result)
+                           (config/get "errors" result))))))

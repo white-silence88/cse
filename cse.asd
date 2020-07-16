@@ -26,4 +26,5 @@
                (:file "./src/utils/configs")
                (:file "./src/application/application")
                (:file "./src/answers/json-api-seon")
+               (:file "./src/adapters/base-adapter")
                (:file "./src/adapters/woo")))

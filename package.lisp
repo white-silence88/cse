@@ -13,8 +13,10 @@
    ;;; API for work with routes
    #:routes-config->>routes-map
    #:routes-map/find
+   ;; API for work with default adapter
+   #:env->request
    ;;; API for work with WOO server
-   #:woo/env->>request
+   #:woo->>request
    ;;; API for get JSON API answer (simple SEON standard)
    #:seon-answers/success
    #:seon-answers/errors

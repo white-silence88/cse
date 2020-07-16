@@ -18,8 +18,13 @@
 ;;
 ;;
 ;; Description:
+;;   propcedure for get request config from woo env (by ckeck in base adapters)
 ;; Params:
+;;   key     [Symbol]    property symbol from request plist
+;;   name    [String]    name of property in request config
+;;   value   [Any]       value of request property
 ;; Returns:
+;;   pair config
 (defun woo/check (key name value)
   (cond
     ((eq key *woo-request-method-symbol*) (from-env/get-param->method name value))
@@ -46,3 +51,25 @@
                  (cons *woo-query-string-symbol* *default-headers-field*)
                  (cons *woo-content-type-symbol* *default-content-type-field*))))
     (env->request env configs #'woo/check)))
+
+;; adapters/woo
+;;
+;;
+;; Description:
+;;   adapter for Woo server
+;; Params:
+;;   routes-map       [List]      list of routes
+;;   success          [List]      list with success answer config
+;;   redirection      [List]      list with redirection answer config
+;;   informational    [List]      list with informational answer config
+;;   client-errors    [List]      list with client errors answer config
+;;   server-errors    [List]      list with server errors answer config
+;;   reaction-fn      [Function]  procedure for get reactions by routes
+;; Returns:
+(defun adapters/woo
+    (routes-map success redirection informational client-errors server-errors reaction-fn)
+  (woo:run
+   (lambda (env)
+     (adapters/base
+      env
+      routes-map success redirection informational client-errors server-errors #'woo->>request reaction-fn))))

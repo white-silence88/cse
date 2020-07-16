@@ -16,7 +16,7 @@
    ;; API for work with default adapter
    #:env->request
    ;;; API for work with WOO server
-   #:woo->>request
+   #:adapters/woo
    ;;; API for get JSON API answer (simple SEON standard)
    #:seon-answers/success
    #:seon-answers/errors

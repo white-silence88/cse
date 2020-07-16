@@ -1,15 +1,49 @@
 (in-package :cse)
+
+;; http->base-routing
+;;
+;;
+;; Description:
+;;   procedure with base routing reactions
+;; Params:
+;;   content-type     [String]                      type of content
+;;   route            [Pair<String, HashTable>]     route pattern and config
+;;   request          [List]                        list with request config
+;;   success          [List]                        list with success answer config
+;;   redirection      [List]                        list with redirection answer config
+;;   informational    [List]                        list with informational answer config
+;;   client-errors    [List]                        list with client errors answer config
+;;   server-errors    [List]                        list with server errors answer config
+;; Returns:
+;;   http answer in list type
+(defun http->base-routing
+    (content-type route request success redirection informational client-errors server-errors)
+  (cond
+    ((not route)
+     (controllers/routes->not-found client-errors content-type))
+    (t
+     (conrollres/routes->founded
+      content-type
+      request
+      route
+      success
+      redirection
+      informational
+      client-errors
+      server-errors))))
+
 ;; http->run
 ;;
 ;;
 ;; Description:
 ;;   procedure for run HTTP server
 ;; Params:
-;;   routes-config    [List]   routes config list
-;;   answers-config   [List]   answers config list
+;;   routes-config    [List]      routes config list
+;;   answers-config   [List]      answers config list
+;;   adapter          [Function]  adapter for HTTP application
 ;; Returns:
 ;;   nil
-(defun http->run (routes-config answers-config)
+(defun http->run (routes-config answers-config adapter)
   (let
       ((routes-map (routes-config->>routes-map routes-config))
        (success (config/get *default-success-field* answers-config))
@@ -17,27 +51,10 @@
        (informational (config/get *default-informational-field* answers-config))
        (client-errors (config/get *default-client-errors-field* answers-config))
        (server-errors (config/get *default-server-errors-field* answers-config)))
-    (woo:run
-     (lambda (env)
-       (let*
-           ((server-config nil)
-            (request (woo->>request env))
-            (request-url (config/get *default-baseurl-field* request))
-            (route (routes-map/find routes-map request-url))
-            (content-type *content-type-for-api*))
-         (cond
-          ((not route)
-           (controllers/routes->not-found client-errors content-type))
-          (t
-           (conrollres/routes->founded
-            content-type
-            request
-            route
-            success
-            redirection
-            informational
-            client-errors
-            server-errors))))))))
+    (funcall
+     adapter
+     routes-map success redirection informational client-errors server-errors #'http->base-routing)))
+
 
 ;; application->start
 ;;
@@ -55,7 +72,7 @@
    ((string-equal name *application/http*)
     (progn
       (log:info "Starting thread with name \"~a\"...." name)
-      (bt:make-thread (lambda () (http->run routes-config answers-config)) :name name)
+      (bt:make-thread (lambda () (http->run routes-config answers-config #'adapters/woo)) :name name)
       (log:info "Thread started. Find in threads...")
       (log:info "Thread info: ~a~%" (application->get/thread-by-name name))))
    (t (log:error "Not correct name (~a) or application type not allowed.~%" name))))

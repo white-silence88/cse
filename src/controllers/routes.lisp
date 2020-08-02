@@ -19,7 +19,6 @@
       ((to-check (string-downcase method)))
     (if (member to-check methods :test #'checks/compare-methods-names) t nil)))
 
-
 ;; conrollres/routes->founded
 ;;
 ;;
@@ -41,9 +40,14 @@
           (seon-answers/errors->method-not-allowed client-errors content-type))
         (let*
             ((updated (if (not on-request)
-                          (cons request nil)
+                          (list
+                           (cons "request" request)
+                           (cons "response" (list))
+                           (cons "errors" (list)))
                           (middlewares/loop on-request request nil nil)))
-             (result (base-handler (config/get "request" updated) nil (config/get "errors" updated)))
+             (result
+               (base-handler
+                (config/get "request" updated) nil (config/get "errors" updated)))
              (final (cond
                       ((not on-response) result)
                       (t (middlewares/loop on-response
@@ -53,9 +57,6 @@
              (req (config/get "request" final))
              (errs (config/get "response" final))
              (res (config/get "errors" final)))
-          (log:info "REQ: ~a~%" req)
-          (log:info "RES: ~a~%" res)
-          (log:info "ERRS: ~a~%" errs)
           (cond
             ((not errs)
              (progn
@@ -63,6 +64,7 @@
             (t (progn
                  (log:error "Errors: ~a~%" errs)
                  (seon-answers/success success content-type *ok*))))))))
+
 
 ;; controllers/routes->not-found
 ;;

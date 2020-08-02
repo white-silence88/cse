@@ -18,7 +18,10 @@
                         (t (symbol-function middleware-symbol))))
        (result (cond
                  ((not middleware-fn)
-                  (list (cons "request" request) (cons "response" response) (cons "errors" errors)))
+                  (list
+                   (cons "request" request)
+                   (cons "response" response)
+                   (cons "errors" errors)))
                  (t (funcall middleware-fn request response errors)))))
     (cond
       ((not rest-middlewares) result)

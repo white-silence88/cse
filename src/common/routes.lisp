@@ -142,7 +142,7 @@
 (defun parser/update-path-or-prefix (prefix tname)
   (cond
    ((not prefix) tname)
-   (t (concatenate 'string tname prefix))))
+   (t (concatenate 'string prefix tname))))
 
 
 ;; parser/add-route-pair
@@ -163,7 +163,7 @@
 (defun parser/add-pair
     (tname tbody desc req-mid res-mid result prefix)
   (let*
-      ((path (parser/update-path-or-prefix tname prefix))
+      ((path (parser/update-path-or-prefix prefix tname))
        (handler (config-property->get tbody *route-config-handler-field*))
        (methods (config-property->get tbody *route-config-methods-field*))
        (values (list desc methods req-mid res-mid handler))

@@ -34,7 +34,8 @@
        (on-request (gethash 'on-request route-config))
        (on-response (gethash 'on-response route-config))
        (handlers (gethash 'handlers route-config))
-       (answer (gethash 'answer route-config)))
+       (answer (gethash 'answer route-config))
+       (first-response (if (not answer) (list) answer)))
     (if (not (check-method-on-allowed request-method route-methods))
         (progn
           (log:error "Method \"~a\" not allowed. Not correct request~%" request-method)
@@ -43,7 +44,7 @@
             ((updated (if (not on-request)
                           (list
                            (cons "request" request)
-                           (cons "response" (if (not answer) (list) answer))
+                           (cons "response" first-response)
                            (cons "errors" (list)))
                           (middlewares/loop on-request request first-response nil)))
              (result

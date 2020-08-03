@@ -33,7 +33,8 @@
        (request-method (string-downcase (config/get "method" request)))
        (on-request (gethash 'on-request route-config))
        (on-response (gethash 'on-response route-config))
-       (handlers (gethash 'handlers route-config)))
+       (handlers (gethash 'handlers route-config))
+       (answer (gethash 'answer route-config)))
     (if (not (check-method-on-allowed request-method route-methods))
         (progn
           (log:error "Method \"~a\" not allowed. Not correct request~%" request-method)
@@ -42,12 +43,14 @@
             ((updated (if (not on-request)
                           (list
                            (cons "request" request)
-                           (cons "response" (list))
+                           (cons "response" (if (not answer) (list) answer))
                            (cons "errors" (list)))
-                          (middlewares/loop on-request request nil nil)))
+                          (middlewares/loop on-request request first-response nil)))
              (result
                (base-handler
-                (config/get "request" updated) nil (config/get "errors" updated)))
+                (config/get "request" updated)
+                (config/get "response" updated)
+                (config/get "errors" updated)))
              (final (cond
                       ((not on-response) result)
                       (t (middlewares/loop on-response
@@ -55,12 +58,13 @@
                                            (config/get "response" result)
                                            (config/get "errors" result)))))
              (req (config/get "request" final))
-             (errs (config/get "response" final))
-             (res (config/get "errors" final)))
+             (errs (config/get "errors" final))
+             (res (config/get "response" final)))
           (cond
             ((not errs)
-             (progn
-               (seon-answers/success success content-type *ok*)))
+             (if (not res)
+                 (seon-answers/success success content-type *ok*)
+                 (seon-answers/success-from-config success content-type res)))
             (t (progn
                  (log:error "Errors: ~a~%" errs)
                  (seon-answers/success success content-type *ok*))))))))

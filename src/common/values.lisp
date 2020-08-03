@@ -123,7 +123,7 @@
 (defparameter *route-config-on-response-field* "on-response")
 (defparameter *route-config-methods-field* "methods")
 (defparameter *route-config-handler-field* "handler")
-
+(defparameter *route-config-answer-field* "answer")
 ;;
 ;; ============================================================================
 ;;                           SUCCESS ANSWERS NAMES

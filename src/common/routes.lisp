@@ -166,8 +166,9 @@
       ((path (parser/update-path-or-prefix prefix tname))
        (handler (config-property->get tbody *route-config-handler-field*))
        (methods (config-property->get tbody *route-config-methods-field*))
-       (values (list desc methods req-mid res-mid handler))
-       (keys (list 'description 'methods 'on-request 'on-response 'handlers))
+       (answer (config-property->get tbody *route-config-answer-field*))
+       (values (list desc methods req-mid res-mid handler answer))
+       (keys (list 'description 'methods 'on-request 'on-response 'handlers 'answer))
        (fields (route-config/make-config-list values keys))
        (config (route-config/make fields))
        (pair-list (list (cons path config))))
@@ -311,8 +312,8 @@
       (let
           ((palist (list (cons (subseq name *start-name-index*) value))))
         (cond
-         ((not params) palist)
-         (t (append params palist))))
+          ((not params) palist)
+          (t (append params palist))))
       params))
 
 ;; compare-lists/compare-tokens

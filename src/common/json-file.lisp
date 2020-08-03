@@ -56,7 +56,12 @@
          *route-config-on-request-field*
          *route-config-on-response-field*
          *route-config-methods-field*
-         *route-config-handler-field*)))
+         *route-config-handler-field*
+         *route-config-answer-field*
+         "title"
+         "message"
+         "description"
+         "data")))
     (cons (tree<-get-key key type reserved) (tree<-get-value value type))))
 
 ;; hash->>tree

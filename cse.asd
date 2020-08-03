@@ -12,7 +12,8 @@
                #:bt-semaphore
                #:jonathan
                #:log4cl
-               #:cl-ppcre)
+               #:cl-ppcre
+               #:fact-base)
   :components ((:file "package")
                (:file "cse")
                (:file "./src/utils/checks")

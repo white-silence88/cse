@@ -33,3 +33,9 @@
 
 (defun seon-answers/success (success-config content-type key)
   (seon-answers->answer "success" success-config content-type key))
+
+(defun seon-answers/success-from-config (success-config content-type body-list)
+  (let*
+      ((property-config (config/get *ok* success-config))
+       (code (config/get *code-field* property-config)))
+    (get-answer code content-type body-list)))
